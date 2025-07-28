@@ -90,7 +90,7 @@ function Write-Success {
     Write-Host "[SUCCESS] $Message" -ForegroundColor Green
 }
 
-function Write-WarningMessageMessage {
+function Write-WarningMessage {
     <#
     .SYNOPSIS
         Displays warning messages in yellow.
@@ -101,7 +101,7 @@ function Write-WarningMessageMessage {
     )
     
     Write-Host "[WARNING] $Message" -ForegroundColor Yellow
-    Write-WarningMessage $Message  # Also send to warning stream
+    Write-Warning $Message  # Also send to warning stream
 }
 
 function Write-ScriptError {
@@ -115,7 +115,7 @@ function Write-ScriptError {
     )
     
     Write-Host "[ERROR] $Message" -ForegroundColor Red
-    Write-ScriptError $Message  # Also send to error stream
+    Write-Error $Message  # Also send to error stream
 }
 
 function Write-Prompt {
