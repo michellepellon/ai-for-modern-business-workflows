@@ -2079,6 +2079,35 @@ function Install-ClaudeCode {
         Write-PhaseHeader "Claude Code Installation"
         Write-Info "Starting Claude Code installation process..."
         
+        # Critical: Check virtualization support first
+        Write-PhaseHeader "Critical System Requirements"
+        Write-Info "Checking virtualization support (required for WSL 2)..."
+        
+        if (-not (Test-Virtualization)) {
+            Write-ScriptError "CRITICAL: Virtualization support is not enabled!"
+            Write-Host ""
+            Write-ScriptError "WSL 2 requires hardware virtualization to be enabled in your system."
+            Write-Info "To fix this issue:"
+            Write-Info "  1. Restart your computer and enter BIOS/UEFI settings"
+            Write-Info "     (usually by pressing F2, F10, F12, DEL, or ESC during boot)"
+            Write-Info "  2. Look for virtualization settings such as:"
+            Write-Info "     - Intel VT-x (Intel CPUs)"
+            Write-Info "     - AMD-V or SVM Mode (AMD CPUs)"
+            Write-Info "     - Virtualization Technology"
+            Write-Info "     - Hardware Virtualization"
+            Write-Info "  3. Enable the virtualization option"
+            Write-Info "  4. Save and exit BIOS/UEFI"
+            Write-Info "  5. Run this script again"
+            Write-Host ""
+            Write-Info "Note: The exact location and name of the setting varies by manufacturer."
+            Write-Info "Consult your motherboard or computer manual for specific instructions."
+            
+            Exit-Script -ExitCode 1 -Message "Installation cancelled: Virtualization must be enabled before proceeding"
+        }
+        
+        Write-Success "Virtualization is enabled"
+        Write-Host ""
+        
         # System Validation Phase
         Write-PhaseHeader "System Validation"
         
@@ -2096,11 +2125,6 @@ function Install-ClaudeCode {
         
         # Check CPU architecture
         if (-not (Test-CPUArchitecture)) {
-            $validationPassed = $false
-        }
-        
-        # Check virtualization
-        if (-not (Test-Virtualization)) {
             $validationPassed = $false
         }
         
