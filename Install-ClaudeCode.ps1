@@ -943,12 +943,34 @@ function Test-WSL {
                 $defaultVersion = $null
                 $kernelVersion = $null
                 
+                # Debug output to help diagnose parsing issues
+                Write-Info "WSL status output:"
+                $statusOutput | ForEach-Object { Write-Info "  $_" }
+                
                 foreach ($line in $statusOutput) {
-                    if ($line -match "Default Version:\s*(\d+)") {
+                    # More flexible pattern to match various formats
+                    if ($line -match "Default\s+Version:\s*(\d+)" -or 
+                        $line -match "Default\s+version:\s*(\d+)" -or
+                        $line -match "Standardversion:\s*(\d+)" -or  # German
+                        $line -match "Version\s+par\s+défaut\s*:\s*(\d+)" -or  # French
+                        $line -match ":\s*WSL\s*(\d+)") {  # Generic pattern
                         $defaultVersion = [int]$matches[1]
                     }
-                    elseif ($line -match "WSL 2") {
+                    elseif ($line -match "WSL 2" -or $line -match "WSL2") {
                         $kernelVersion = "WSL 2"
+                    }
+                }
+                
+                # If we couldn't parse the default version from status, try --get-default-version
+                if ($null -eq $defaultVersion) {
+                    try {
+                        $versionOutput = & wsl --get-default-version 2>&1
+                        if ($LASTEXITCODE -eq 0) {
+                            $defaultVersion = [int]$versionOutput.Trim()
+                        }
+                    }
+                    catch {
+                        Write-WarningMessage "Could not determine default version from --get-default-version"
                     }
                 }
                 
@@ -1185,6 +1207,20 @@ function Install-WSL2Kernel {
                 Write-WarningMessage "WSL 2 kernel update installed, but a reboot is required"
                 Write-Info "Please restart your computer and run this script again"
                 $installSuccess = $false  # Indicate reboot needed
+            }
+            elseif ($process.ExitCode -eq 1603) {
+                Write-ScriptError "WSL 2 kernel installation failed with error 1603 (Fatal error during installation)"
+                Write-Info "This error typically indicates one of the following:"
+                Write-Info "  - Insufficient permissions (try running as Administrator)"
+                Write-Info "  - Previous failed installation remnants"
+                Write-Info "  - Corrupted installer file"
+                Write-Info ""
+                Write-Info "Recommended solutions:"
+                Write-Info "  1. Run this script as Administrator"
+                Write-Info "  2. Restart your computer and try again"
+                Write-Info "  3. Run 'wsl --update' manually in an elevated PowerShell"
+                Write-Info "  4. Check Windows Update for any pending updates"
+                $installSuccess = $false
             }
             else {
                 Write-ScriptError "WSL 2 kernel installation failed with exit code: $($process.ExitCode)"
